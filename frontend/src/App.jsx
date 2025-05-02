@@ -4,6 +4,7 @@ import './App.css';
 
 function App() {
   const [expenses, setExpenses] = useState([]);
+  const [editId, setEditId] = useState(null);
   console.log("Current expenses:", expenses);
   const [form, setForm] = useState({
     description: "",
@@ -25,15 +26,31 @@ function App() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    fetch("http://localhost:5050/api/expenses", {
-      method: "POST",
+  
+    const method = editId ? "PUT" : "POST";
+    const url = editId
+      ? `http://localhost:5050/api/expenses/${editId}`
+      : "http://localhost:5050/api/expenses";
+  
+    fetch(url, {
+      method: method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     })
-      .then((res) => res.json())
-      .then((newExpense) => {
-        setExpenses([...expenses, newExpense]);
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed");
+        return res.json();
+      })
+      .then((data) => {
+        if (editId) {
+          setExpenses((prev) =>
+            prev.map((e) => (e.id === editId ? { ...form, id: editId } : e))
+          );
+        } else {
+          setExpenses([...expenses, data]);
+        }
         setForm({ description: "", amount: "", date: "", category: "" });
+        setEditId(null);
       })
       .catch((err) => console.error(err));
   };
@@ -109,13 +126,19 @@ function App() {
 
       <ul className="list-group">
       {expenses.map((expense) => (
-  <li key={expense.id} className="list-group-item d-flex justify-content-between align-items-center">
-    <span>
-      {expense.description} — ${expense.amount} — {expense.date} — {expense.category}
-    </span>
-    <button className="btn btn-danger btn-sm" onClick={() => handleDelete(expense.id)}>Delete</button>
-  </li>
-))}
+        <li key={expense.id} className="list-group-item d-flex justify-content-between align-items-center">
+          <span>
+            {expense.description} — ${expense.amount} — {expense.date} — {expense.category}
+          </span>
+          <div>
+            <button className="btn btn-sm btn-secondary me-2" onClick={() => {
+              setForm(expense);
+              setEditId(expense.id);
+            }}>Edit</button>
+            <button className="btn btn-danger btn-sm" onClick={() => handleDelete(expense.id)}>Delete</button>
+          </div>
+        </li>
+        ))}
       </ul>
     </div>
   );

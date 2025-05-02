@@ -55,5 +55,14 @@ namespace ExpenseTracker.Controllers
             await _context.SaveChangesAsync();
             return NoContent();
         }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateExpense(int id, Expense expense)
+        {
+            if (id != expense.ID) return BadRequest();
+            _context.Entry(expense).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
     }
 }
